@@ -188,7 +188,7 @@ volumeMounts:
 
 ## Development
 
-Requirements: Go 1.22+, Docker with Buildx (for multi-arch image builds).
+Requirements: Go 1.27+, Docker with Buildx (for multi-arch image builds).
 
 ```sh
 git clone https://github.com/skriptfabrik/fileenv.git
