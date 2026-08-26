@@ -1,5 +1,6 @@
 // fileenv reads environment variables with the "_FILE" suffix (configurable
-// via FILEENV_SUFFIX), loads the content of the referenced file, sets a new
+// via FILEENV_SUFFIX, and filterable via FILEENV_EXCLUDE/FILEENV_INCLUDE),
+// loads the content of the referenced file, sets a new
 // environment variable without the suffix, and then executes the
 // program passed as an argument via exec() (replacing
 // the current process, PID is preserved -> signals work
@@ -27,7 +28,9 @@ const defaultFileSuffix = "_FILE"
 // Names of fileenv's own configuration variables. These are never
 // themselves treated as candidates for suffix-based file resolution.
 const (
-	suffixEnvVar = "FILEENV_SUFFIX"
+	suffixEnvVar  = "FILEENV_SUFFIX"
+	excludeEnvVar = "FILEENV_EXCLUDE"
+	includeEnvVar = "FILEENV_INCLUDE"
 )
 
 // version is set during the release build via -ldflags "-X main.version=...".
@@ -35,7 +38,9 @@ var version = "dev"
 
 // config holds fileenv's own settings, derived from its FILEENV_* environment variables.
 type config struct {
-	suffix string
+	suffix  string
+	exclude map[string]struct{} // nil if FILEENV_EXCLUDE is not set
+	include map[string]struct{} // nil if FILEENV_INCLUDE is not set
 }
 
 // main is the entry point of fileenv. It checks for the "--version" flag,
@@ -93,6 +98,7 @@ func run() error {
 }
 
 // loadConfig reads fileenv's own FILEENV_* environment variables.
+// FILEENV_EXCLUDE and FILEENV_INCLUDE are mutually exclusive.
 func loadConfig() (config, error) {
 	cfg := config{suffix: defaultFileSuffix}
 
@@ -104,14 +110,42 @@ func loadConfig() (config, error) {
 		cfg.suffix = v
 	}
 
+	// Allow the include/exclude lists to be configured via FILEENV_INCLUDE and FILEENV_EXCLUDE.
+	excludeRaw, hasExclude := os.LookupEnv(excludeEnvVar)
+	includeRaw, hasInclude := os.LookupEnv(includeEnvVar)
+
+	if hasExclude && hasInclude {
+		return config{}, fmt.Errorf("%s and %s cannot be set at the same time", excludeEnvVar, includeEnvVar)
+	}
+
+	cfg.exclude = parseList(excludeRaw, hasExclude)
+	cfg.include = parseList(includeRaw, hasInclude)
+
 	return cfg, nil
+}
+
+// parseList splits a comma-separated list of variable names.
+// It returns nil if the variable wasn't set at all, distinguishing
+// "not configured" from "configured but empty".
+func parseList(raw string, present bool) map[string]struct{} {
+	if !present {
+		return nil
+	}
+
+	set := make(map[string]struct{})
+	for _, item := range strings.Split(raw, ",") {
+		if item = strings.TrimSpace(item); item != "" {
+			set[item] = struct{}{}
+		}
+	}
+	return set
 }
 
 // isControlVar reports whether key is one of fileenv's own
 // configuration variables, which are never resolved themselves.
 func isControlVar(key string) bool {
 	switch key {
-	case suffixEnvVar:
+	case suffixEnvVar, excludeEnvVar, includeEnvVar:
 		return true
 	default:
 		return false
@@ -129,6 +163,18 @@ func resolveFileEnvVars(cfg config) error {
 			continue
 		}
 
+		// Apply include/exclude filtering if configured
+		if cfg.include != nil {
+			if _, ok := cfg.include[key]; !ok {
+				continue
+			}
+		} else if cfg.exclude != nil {
+			if _, ok := cfg.exclude[key]; ok {
+				continue
+			}
+		}
+
+		// Derive the target environment variable name by removing the suffix
 		targetKey := strings.TrimSuffix(key, cfg.suffix)
 		if targetKey == "" {
 			continue

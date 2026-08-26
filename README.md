@@ -173,9 +173,27 @@ fileenv itself is configured via a small number of `FILEENV_*` environment
 variables. These are never treated as `_FILE` candidates themselves, and are
 left in the environment when the target process is exec'd.
 
-| Variable          | Purpose                                                            |
-| ----------------- | ------------------------------------------------------------------ |
-| `FILEENV_SUFFIX`  | Suffix to look for instead of the default `_FILE` (e.g. `__FILE`). |
+| Variable          | Purpose                                                                    |
+| ----------------- | -------------------------------------------------------------------------- |
+| `FILEENV_SUFFIX`  | Suffix to look for instead of the default `_FILE` (e.g. `__FILE`).         |
+| `FILEENV_EXCLUDE` | Comma-separated list of variable names to skip.                            |
+| `FILEENV_INCLUDE` | Comma-separated list of variable names to resolve; all others are skipped. |
+
+`FILEENV_EXCLUDE` and `FILEENV_INCLUDE` are mutually exclusive — setting both
+makes fileenv exit with an error before resolving anything. If neither is
+set, fileenv resolves every variable ending in the configured suffix, as
+before.
+
+This is useful when a base image already sets an unrelated `_FILE`-suffixed
+variable that isn't a secret reference — for example `SSL_CERT_FILE`, the
+Go/OpenSSL convention for the system CA bundle path. Without excluding it,
+fileenv would read the (often large) CA bundle into an `SSL_CERT` environment
+variable, which can even exceed the kernel's environment size limit and make
+the subsequent `exec` fail with "argument list too long":
+
+```dockerfile
+ENV FILEENV_EXCLUDE=SSL_CERT_FILE
+```
 
 ## Behavior details / edge cases
 
