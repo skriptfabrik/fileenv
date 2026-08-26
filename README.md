@@ -84,14 +84,14 @@ major tag (`:1`) in production.
 Every [release](https://github.com/skriptfabrik/fileenv/releases) includes
 prebuilt binaries for the most common platforms, plus a `checksums.txt`:
 
-| OS      | Architecture      | Archive                                     |
-| ------- | ----------------- | -------------------------------------------- |
-| Linux   | amd64              | `fileenv_<version>_linux_amd64.tar.gz`       |
-| Linux   | arm64              | `fileenv_<version>_linux_arm64.tar.gz`       |
-| Linux   | armv7              | `fileenv_<version>_linux_armv7.tar.gz`       |
-| macOS   | amd64              | `fileenv_<version>_darwin_amd64.tar.gz`      |
-| macOS   | arm64 (Apple Sil.) | `fileenv_<version>_darwin_arm64.tar.gz`      |
-| Windows | amd64              | `fileenv_<version>_windows_amd64.zip`        |
+| OS      | Architecture      | Archive                                  |
+| ------- | ----------------- | ---------------------------------------- |
+| Linux   | amd64              | `fileenv_<version>_linux_amd64.tar.gz`  |
+| Linux   | arm64              | `fileenv_<version>_linux_arm64.tar.gz`  |
+| Linux   | armv7              | `fileenv_<version>_linux_armv7.tar.gz`  |
+| macOS   | amd64              | `fileenv_<version>_darwin_amd64.tar.gz` |
+| macOS   | arm64 (Apple Sil.) | `fileenv_<version>_darwin_arm64.tar.gz` |
+| Windows | amd64              | `fileenv_<version>_windows_amd64.zip`   |
 
 ```sh
 curl -LO https://github.com/skriptfabrik/fileenv/releases/latest/download/fileenv_<version>_linux_amd64.tar.gz
@@ -167,10 +167,20 @@ volumeMounts:
     readOnly: true
 ```
 
+## Configuration
+
+fileenv itself is configured via a small number of `FILEENV_*` environment
+variables. These are never treated as `_FILE` candidates themselves, and are
+left in the environment when the target process is exec'd.
+
+| Variable          | Purpose                                                            |
+| ----------------- | ------------------------------------------------------------------ |
+| `FILEENV_SUFFIX`  | Suffix to look for instead of the default `_FILE` (e.g. `__FILE`). |
+
 ## Behavior details / edge cases
 
-- Only the `_FILE` suffix is recognized; there is no configurable prefix/suffix
-  (kept intentionally simple — fork the project if you need that).
+- The suffix is `_FILE` by default; override it with `FILEENV_SUFFIX` (see
+  [Configuration](#configuration)).
 - If both `FOO` and `FOO_FILE` are set, `FOO_FILE` wins and overwrites `FOO`.
 - Empty variable names (i.e. a variable literally named `_FILE`) are ignored.
 - File contents are used as-is except for a trimmed trailing `\r\n`/`\n` — no
