@@ -32,7 +32,8 @@ dependencies, so it also works in minimal, shell-less images.
 - Single static binary, no libc dependency (`CGO_ENABLED=0`)
 - No shell, no package manager, no attack surface beyond the binary itself
 - Reads any environment variable ending in `_FILE`, resolves the referenced file,
-  and sets the same variable name without the suffix
+  sets the same variable name without the suffix, and removes the `_FILE`
+  variable
 - Replaces itself with the target process via `exec` (not fork) — the target
   process keeps PID 1, so signals like `SIGTERM` from `docker stop` /
   `docker service update` reach it directly, with no zombie-process risk and no
@@ -43,8 +44,9 @@ dependencies, so it also works in minimal, shell-less images.
 ## How it works
 
 1. `fileenv` iterates over its own environment.
-2. For every variable `FOO_FILE=/path/to/file`, it reads `/path/to/file` and sets
-   `FOO=<contents of the file>` (trailing `\n`/`\r\n` stripped).
+2. For every variable `FOO_FILE=/path/to/file`, it reads `/path/to/file`, sets
+   `FOO=<contents of the file>` (trailing `\n`/`\r\n` stripped), and removes
+   `FOO_FILE`.
 3. It looks up the command given as arguments (via `PATH` if not an absolute path).
 4. It calls `exec()`, replacing itself with that command — the target process
    inherits the now-fully-populated environment.
@@ -200,6 +202,9 @@ ENV FILEENV_EXCLUDE=SSL_CERT_FILE
 - The suffix is `_FILE` by default; override it with `FILEENV_SUFFIX` (see
   [Configuration](#configuration)).
 - If both `FOO` and `FOO_FILE` are set, `FOO_FILE` wins and overwrites `FOO`.
+- The original suffixed variable (e.g. `FOO_FILE`) is removed from the
+  environment once resolved — the target process only ever sees the resolved
+  `FOO`, not the file path.
 - Empty variable names (i.e. a variable literally named `_FILE`) are ignored.
 - File contents are used as-is except for a trimmed trailing `\r\n`/`\n` — no
   further parsing, quoting, or templating is applied.

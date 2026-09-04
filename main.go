@@ -1,18 +1,17 @@
 // fileenv reads environment variables with the "_FILE" suffix (configurable
 // via FILEENV_SUFFIX, and filterable via FILEENV_EXCLUDE/FILEENV_INCLUDE),
-// loads the content of the referenced file, sets a new
-// environment variable without the suffix, and then executes the
-// program passed as an argument via exec() (replacing
-// the current process, PID is preserved -> signals work
-// correctly, no additional init process needed).
+// loads the content of the referenced file, sets a new environment variable
+// without the suffix, unsets the original suffixed variable, and then executes
+// the program passed as an argument via exec() (replacing the current process,
+// PID is preserved -> signals work correctly, no additional init process
+// needed).
 //
 // Example:
 //
 //	DB_PASSWORD_FILE=/run/secrets/db_password fileenv -- myapp --serve
 //
-// -> reads /run/secrets/db_password, sets DB_PASSWORD=<content>,
-//
-//	then exec's "myapp --serve" with the complete environment.
+// -> reads /run/secrets/db_password, sets DB_PASSWORD=<content>, removes
+// DB_PASSWORD_FILE, then exec's "myapp --serve" with the complete environment.
 package main
 
 import (
@@ -193,6 +192,13 @@ func resolveFileEnvVars(cfg config) error {
 		// Set the new environment variable without the suffix
 		if err := os.Setenv(targetKey, value); err != nil {
 			return fmt.Errorf("cannot set %s: %w", targetKey, err)
+		}
+
+		// Remove the original suffixed variable now that it's been resolved,
+		// so the target program doesn't see the file path alongside the
+		// resolved value.
+		if err := os.Unsetenv(key); err != nil {
+			return fmt.Errorf("cannot unset %s: %w", key, err)
 		}
 	}
 	return nil
