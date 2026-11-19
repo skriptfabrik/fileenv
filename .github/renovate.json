@@ -48,9 +48,10 @@
       "schedule": ["* * * * 0"]
     },
     {
-      "description": "Devcontainer feature versions are updated on Sundays",
+      "description": "Devcontainer feature versions are updated on Sundays, final releases only",
       "matchManagers": ["custom.regex"],
       "matchFileNames": [".devcontainer/devcontainer.json"],
+      "allowedVersions": "/^\\d+\\.\\d+\\.\\d+$/",
       "addLabels": ["devcontainer"],
       "schedule": ["* * * * 0"]
     },
