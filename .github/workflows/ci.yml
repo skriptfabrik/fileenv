@@ -26,6 +26,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      - name: Check Go version consistency
+        run: |
+          gomod="$(awk '/^go / {print $2}' go.mod | cut -d. -f1,2)"
+          docker="$(sed -nE 's/^FROM .*golang:([0-9]+\.[0-9]+).*/\1/p' Dockerfile | head -n1)"
+          mise="$(awk '/^\[\[tools\.go\]\]/ {f=1; next} f && /^version/ {gsub(/"/, "", $3); print $3; exit}' mise.lock | cut -d. -f1,2)"
+          echo "go.mod: ${gomod:-<missing>}  Dockerfile: ${docker:-<missing>}  mise.lock: ${mise:-<missing>}"
+          if [ -z "$gomod" ] || [ "$gomod" != "$docker" ] || [ "$gomod" != "$mise" ]; then
+            echo "::error::Go versions are inconsistent. Align Dockerfile and mise.lock (run 'mise lock') with go.mod."
+            exit 1
+          fi
+
       - name: Set up Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
