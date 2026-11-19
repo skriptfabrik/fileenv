@@ -81,6 +81,12 @@
       "schedule": ["* * * * 0"]
     },
     {
+      "description": "The go version in mise.toml is derived from go.mod and must not be updated by the mise manager",
+      "matchManagers": ["mise"],
+      "matchDepNames": ["go"],
+      "enabled": false
+    },
+    {
       "description": "Go toolchain (go.mod directive + golang image) is updated together",
       "matchDepNames": ["go", "golang"],
       "matchManagers": ["gomod", "dockerfile"],
