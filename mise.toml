@@ -1,2 +1,3 @@
 [tools]
+gh = "2.104.0"
 go = "{{ exec(command=`awk '/^go / {print $2}' go.mod`) }}"

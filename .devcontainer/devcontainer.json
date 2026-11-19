@@ -1,33 +1,57 @@
 {
-    "name": "fileenv",
-    "image": "mcr.microsoft.com/vscode/devcontainers/base:ubuntu-24.04",
-    "features": {
-        "ghcr.io/devcontainers/features/docker-in-docker:4": {
-            "version": "latest"
-        },
-        "ghcr.io/devcontainers-extra/features/mise:1": {
-            "version": "latest"
-        }
+  "name": "fileenv",
+  "image": "mcr.microsoft.com/vscode/devcontainers/base:ubuntu-24.04",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:4": {
+      "version": "29.9.2"
     },
-    "customizations": {
-        "vscode": {
-            "extensions": [
-                "anthropic.claude-code",
-                "github.copilot",
-                "github.vscode-github-actions",
-                "github.vscode-pull-request-github",
-                "hverlin.mise-vscode",
-                "tamasfe.even-better-toml"
-            ]
-        }
+    "ghcr.io/devcontainers-extra/features/mise:1": {
+      "version": "2026.10.20"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "anthropic.claude-code",
+        "editorconfig.editorconfig",
+        "github.copilot",
+        "github.vscode-github-actions",
+        "github.vscode-pull-request-github",
+        "hverlin.mise-vscode",
+        "tamasfe.even-better-toml"
+      ]
+    }
+  },
+  "mounts": [
+    {
+      "source": "vscode-cache-mise",
+      "target": "/home/vscode/.cache/mise",
+      "type": "volume"
     },
-    "containerEnv": {
-        "MISE_TRUSTED_CONFIG_PATHS": "${containerWorkspaceFolder}"
+    {
+      "source": "vscode-claude",
+      "target": "/home/vscode/.claude",
+      "type": "volume"
     },
-    "remoteEnv": {
-        "MISE_EXPERIMENTAL": "true",
-        "MISE_LOCKFILE": "true"
+    {
+      "source": "vscode-config-gh",
+      "target": "/home/vscode/.config/gh",
+      "type": "volume"
     },
-    "onCreateCommand": ".devcontainer/hooks/on-create.sh",
-    "postCreateCommand": ".devcontainer/hooks/post-create.sh"
+    {
+      "source": "vscode-local-share-mise",
+      "target": "/home/vscode/.local/share/mise",
+      "type": "volume"
+    }
+  ],
+  "containerEnv": {
+    "CLAUDE_CONFIG_DIR": "/home/vscode/.claude",
+    "MISE_TRUSTED_CONFIG_PATHS": "${containerWorkspaceFolder}"
+  },
+  "remoteEnv": {
+    "MISE_EXPERIMENTAL": "true",
+    "MISE_LOCKFILE": "true"
+  },
+  "onCreateCommand": ".devcontainer/hooks/on-create.sh",
+  "postCreateCommand": ".devcontainer/hooks/post-create.sh"
 }
