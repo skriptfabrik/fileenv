@@ -1,0 +1,78 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":disableRateLimiting",
+    ":gitSignOff",
+    ":semanticCommits",
+    ":semanticPrefixChore",
+    ":semanticCommitScopeDisabled"
+  ],
+  "labels": ["dependencies"],
+  "timezone": "Europe/Berlin",
+  "enabledManagers": [
+    "devcontainer",
+    "dockerfile",
+    "github-actions",
+    "gomod",
+    "mise"
+  ],
+  "hostRules": [
+    {
+      "hostType": "docker",
+      "matchHost": "docker.io",
+      "username": "skriptfabrik",
+      "password": "{{ secrets.DOCKERHUB_TOKEN }}"
+    }
+  ],
+  "lockFileMaintenance": {
+    "enabled": true
+  },
+  "packageRules": [
+    {
+      "description": "Devcontainer updates are applied on Sundays",
+      "matchManagers": ["devcontainer"],
+      "addLabels": ["devcontainer"],
+      "schedule": ["* * * * 0"]
+    },
+    {
+      "description": "Dockerfile updates are on Mondays",
+      "matchManagers": ["dockerfile"],
+      "addLabels": ["docker"],
+      "schedule": ["* * * * 1"]
+    },
+    {
+      "description": "GitHub Actions are updated on Sundays",
+      "matchManagers": ["github-actions"],
+      "addLabels": ["github_actions"],
+      "schedule": ["* * * * 0"]
+    },
+    {
+      "description": "Go modules are updated on Mondays",
+      "matchManagers": ["gomod"],
+      "addLabels": ["go"],
+      "postUpdateOptions": ["gomodTidy"],
+      "schedule": ["* * * * 1"]
+    },
+    {
+      "description": "Tools pinned via mise are updated on Sundays",
+      "matchManagers": ["mise"],
+      "addLabels": ["mise"],
+      "schedule": ["* * * * 0"]
+    },
+    {
+      "description": "Go toolchain (go.mod directive + golang image) is updated together",
+      "matchDepNames": ["go", "golang"],
+      "matchManagers": ["gomod", "dockerfile"],
+      "groupName": "go toolchain",
+      "rangeStrategy": "bump",
+      "schedule": ["* * * * 1"]
+    },
+    {
+      "description": "Lock file maintenance runs early on Mondays without a release age",
+      "matchUpdateTypes": ["lockFileMaintenance"],
+      "minimumReleaseAge": null,
+      "schedule": ["* 0-3 * * 1"]
+    }
+  ]
+}
