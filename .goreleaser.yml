@@ -1,0 +1,45 @@
+version: 2
+
+archives:
+  - files:
+      - none*
+    format_overrides:
+      - formats:
+          - zip
+        goos: windows
+    formats:
+      - tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ with .Arm }}v{{ . }}{{ end }}"
+
+builds:
+  - id: fileenv
+    binary: fileenv
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    goarch:
+      - amd64
+      - arm
+      - arm64
+    goarm:
+      - "7"
+    goos:
+      - darwin
+      - linux
+      - windows
+    ignore:
+      - goarch: arm
+        goos: darwin
+      - goarch: arm
+        goos: windows
+      - goarch: arm64
+        goos: windows
+    ldflags:
+      - -s -w -X main.version={{ .Version }}
+
+changelog:
+  use: github-native
+
+checksum:
+  name_template: checksums.txt
